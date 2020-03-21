@@ -925,7 +925,7 @@ public class StarMap extends JLayeredPane {
         starleaguePanel = new JPanel();
         starleaguePanel.setLayout(new BoxLayout(starleaguePanel, BoxLayout.PAGE_AXIS));
         starleaguePanel.setBackground(Color.BLACK);
-        starleaguBox = new JCheckBox("Show Starleague");
+        starleaguBox = new JCheckBox("Show Star League");
         starleaguBox.setAlignmentX(0.0f);
         starleaguBox.setForeground(Color.WHITE);
         starleaguBox.setBackground(Color.BLACK);

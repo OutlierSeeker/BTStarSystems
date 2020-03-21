@@ -1,8 +1,98 @@
 <html>
-<body>
+<head>
+    <style>
+        h1, h2, h3 { text-decoration: underline; color:#FFFFFF; }
+        img { padding:5px 5px 5px 5px; }
+    </style>
+</head>
+<body style="background-color:#000000; color:#DDDDDD">
 <h1>BATTLETECH Planet Systems README</h1>
 <div>
-    This utility provides additional options to view and analyze the star systems
+    This utility provides additional options to view and analyze the star systems found in BATTLETECH (2018).
+    You can zoom in the map, choose which planets are to be displayed and then save the map to a PNG file. Furthermore,
+    you may export some planetary data to a convenient CSV file that you can then import into your favorite spreadsheet program.
 </div>
+<h2>User Interface</h2>
+<h3>Folder Selection</h3>
+<p>
+    When you run <i>BATTLETECH Star Systems</i> for the first time, you will presented with a file selection screen.
+    Choose your BATTLETECH <b>main folder </b> (which contains "<i>BattleTech.exe</i>"), e.g. "<i>D:\Games\Steam\steamapps\common\BATTLETECH</i>"
+    like in the following example:
+    <img src="res\readme\fileSelection.png">
+</p>
+<p>
+    <u><i>BATTLETECH Star Systems</i> works with any version of BATTLETECH</u> and reads the star systems' JSON files
+    from the data folder.
+</p>
+
+<h3>The Main Application</h3>
+<img src="res\readme\mainUI.png">
+
+<h3>The Left Panel</h3>
+<p>
+    In the left panel you can set the attributes of the planets that you want to display. The left radio button column is the default
+    setting and means that the attribute may or may not be present on a star system. The middle column means that the
+    attribute has to be present while the column means that the attribute may <b>not</b> be present (<i>exclude</i>).
+</p>
+<p>
+    The numbers after each attribute mean how many star systems have this attribute within the current selection. In the
+    screenshot above, all attributes are at default and so for this version of BATTLETECH, there are a total of 219 star
+    systems.
+</p>
+
+<h3>The Star Map</h3>
+<p>
+    The middle section displays the star map with all systems that fulfill the set attributes. It also has a menu button
+    which expands/contracts when clicking on it.
+
+    <ul>
+    <li><b>Zooming: </b> The zoom buttons should be self explanatory and are the main reason why I created this program
+        (I wanted a nice overview of the <b>whole</b> map instead of only parts of it.
+        When zooming out, the systems may overlap, especially when additional information is displayed. </li>
+    <li><b>Show Skulls:</b> Displays the skull rating next to each star system.</li>
+    <li><b>Show Black Markets:</b> Indicates which system has a black market.</li>
+    <li><b>Show Star League:</b> Shows if a planet has a former Star League presence.</li>
+    <li><b>Show max. shop items in side panel:</b> Does exactly that.</li>
+    <li><b>Show planet description in side panel:</b> I added this just for fun. The description is usually pretty long
+        and doesn't add anything useful, but it might still be interesting for some.</li>
+    <li><b>Save Map:</b> Saves the current star system configuration and zoom level to a PNG file.
+        This opens a new dialog where you can tweak some settings, but the aforementioned settings are applied to the
+        export, i.e. a zoomed in map will created a larger file than a zoomed out one.
+        <img src="res\readme\mapExport.png"><br>
+        Most settings should be self explanatory. If "<i>Draw Faction Colors</i>" is unticked, the system names will be
+        black or white, depending on the "<i>Draw White Background</i>" setting (which I included for easier printing).<br>
+        The default output directory is the current directory where <i>BATTLETECH Star Systems</i> is located and will
+        automatically rename the default name if a file already exists (e.g. "map1.png", "map2.png", etc.).
+        However, you may manually select a file name and choose to override any existing files.
+    </li>
+    <li><b>Opten BT folder:</b> With this buttong you can change your BATTLETECH folder in case you need it (i.e. should
+        you have more than one installation).
+    </li>
+</ul>
+</p>
+
+<h3>The Right Panel</h3>
+<p>
+    On the right you have a list of all star systems that fulfill the current set of attributes.
+    Hovering the mouse over a planet name will expand the panel to show a more detailed view of the system.
+    Furthermore, the star system is highlighted on the map.
+</p>
+
+<h2>The INI File</h2>
+<p>
+    After running the program for the first time, an INI file is created automatically for some additional options.
+    While most of the info saved there for convenience reasons (GUI and last saved folder), there are two settings that
+    might be of interest:
+    <ul>
+    <li><b>calculateStats:</b> Running <i>BATTLETECH Star Systems</i> with this set to "<i>true</i>" will create a
+        CSV file that contains the owner, employer and target faction statistics of <b>all</b> loaded planets.
+        While this information is also available in the GUI, I found it more convenient to have the data separately in
+        order to adequately analyze the data and plan my next career route.
+    </li>
+    <li><b>useLog:</b> This is basically a debug option. Setting this to "<i>true</i>" will then create a "log.html"
+        when running the program which displays some info about the program.</li>
+</ul>
+</p>
+
 </body>
 </html>
