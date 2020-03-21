@@ -67,8 +67,8 @@ public enum TagItem {
 public enum OwnerFactions {
     //    AURIGAN_PIRATES("Aurigan Pirates", "pirate_logo.png"),
     NOFACTION("Abandoned", "NoFaction.png", new Color(103,116,117), new Color(83,96,97)),
-    AURIGAN_DIRECTORATE("Aurigan Directorate", "Directorate.png", new Color(29,142,14), new Color(0,122,0)),
-    //    AURIGAN_RESTAURATION("Aurigan Restauration", "Restauration.png"),
+//    AURIGAN_DIRECTORATE("Aurigan Directorate", "Directorate.png", new Color(29,142,14), new Color(0,122,0)),
+        AURIGAN_RESTAURATION("Aurigan Restauration", "Restoration.png", new Color(29,142,14), new Color(0,122,0)),
     //    COMSTAR("ComStar", "planetlogo.png"),
     //    KURITA("Kurita", "planetlogo.png"),
     DAVION("Davion", "Suns.png", new Color(215,166, 40), new Color(145,96, 0)),
@@ -101,8 +101,8 @@ public enum OwnerFactions {
 }
 
 public enum Factions {
-    AURIGAN_DIRECTORATE("Aurigan Directorate", "Directorate.png"),
-    AURIGAN_RESTAURATION("Aurigan Restauration", "Restauration.png"),
+//    AURIGAN_DIRECTORATE("Aurigan Directorate", "Directorate.png"),
+    AURIGAN_RESTAURATION("Aurigan Restauration", "Restoration.png"),
     COMSTAR("ComStar", "ComStar.png"),
     DAVION("Davion", "Suns.png"),
     KURITA("Kurita", "Kurita.png"),

@@ -80,7 +80,7 @@ public BTstats(JFrame parentFrame) {
                     String ownerString = (String)o.toString();
                     MSSettings.OwnerFactions ownerFaction = null;
                     if(ownerString.equals("AuriganDirectorate")) {
-                        ownerFaction = MSSettings.OwnerFactions.AURIGAN_DIRECTORATE;
+                        ownerFaction = MSSettings.OwnerFactions.AURIGAN_RESTAURATION;
                     }
 //                    else if(ownerString.equals("AuriganRestoration")) {
 //                        ownerFaction = MSSettings.OwnerFactions.AURIGAN_RESTAURATION;
@@ -172,7 +172,7 @@ public BTstats(JFrame parentFrame) {
                             employers.add(MSSettings.Factions.AURIGAN_PIRATES);
                         }
                         else if(itString.equals("AuriganDirectorate")) {
-                            employers.add(MSSettings.Factions.AURIGAN_DIRECTORATE);
+                            employers.add(MSSettings.Factions.AURIGAN_RESTAURATION);
                         }
                         else if(itString.equals("AuriganRestoration")) {
                             employers.add(MSSettings.Factions.AURIGAN_RESTAURATION);
@@ -219,7 +219,7 @@ public BTstats(JFrame parentFrame) {
                             targets.add(MSSettings.Factions.AURIGAN_PIRATES);
                         }
                         else if(itString.equals("AuriganDirectorate")) {
-                            targets.add(MSSettings.Factions.AURIGAN_DIRECTORATE);
+                            targets.add(MSSettings.Factions.AURIGAN_RESTAURATION);
                         }
                         else if(itString.equals("AuriganRestoration")) {
                             targets.add(MSSettings.Factions.AURIGAN_RESTAURATION);
@@ -341,6 +341,10 @@ public BTstats(JFrame parentFrame) {
                     int sum = 0;
                     for(int j = 0; j < 9; j++) { sb.append(targets[i][j] + ";"); sum += targets[i][j]; }
                     sb.append(sum + "\n");
+                }
+                sb.append("\nSystem Name;Owner;Difficulty;# of Employers;# of Targets;Max. # of Special Shop Items\n");
+                for(StarSystem s : starSystems) {
+                    sb.append(s.name + ";" + s.owner.getDisplayName() + ";" + s.difficulty.getDisplayName() + ";" + s.employers.size() + ";" + s.targets.size() + ";" + s.maxShopSpecials + "\n");
                 }
                 Files.write(statFile.toPath(), Collections.singleton(sb.toString()), StandardCharsets.UTF_8);
             }
