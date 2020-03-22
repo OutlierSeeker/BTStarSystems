@@ -29,6 +29,7 @@ public class MSSettings {
 public static boolean useLog = false;
 public static boolean debug = false;
 public static boolean calculateStats = true;
+public static boolean directDirectorySelection = false;
 public static File lastBTdir = null;
 public static boolean showSkulls = false;
 public static boolean showBlackMarkets = false;

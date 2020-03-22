@@ -17,7 +17,7 @@
 <p>
     When you run <i>BATTLETECH Star Systems</i> for the first time, you will presented with a file selection screen.
     Choose your BATTLETECH <b>main folder </b> (which contains "<i>BattleTech.exe</i>"), e.g. "<i>D:\Games\Steam\steamapps\common\BATTLETECH</i>"
-    like in the following example:
+    like in the following example:<br/>
     <img src="res\readme\fileSelection.png">
 </p>
 <p>
@@ -55,9 +55,9 @@
     <li><b>Show max. shop items in side panel:</b> Does exactly that.</li>
     <li><b>Show planet description in side panel:</b> I added this just for fun. The description is usually pretty long
         and doesn't add anything useful, but it might still be interesting for some.</li>
-    <li><b>Save Map:</b> Saves the current star system configuration and zoom level to a PNG file.
+    <li><b>Save Map:</b> Saves the current star system configuration with the current zoom level to a PNG file.
         This opens a new dialog where you can tweak some settings, but the aforementioned settings are applied to the
-        export, i.e. a zoomed in map will created a larger file than a zoomed out one.
+        export, i.e. a zoomed in map will created a larger file than a zoomed out one.<br/>
         <img src="res\readme\mapExport.png"><br>
         Most settings should be self explanatory. If "<i>Draw Faction Colors</i>" is unticked, the system names will be
         black or white, depending on the "<i>Draw White Background</i>" setting (which I included for easier printing).<br>
@@ -88,6 +88,13 @@
         CSV file that contains the owner, employer and target faction statistics of <b>all</b> loaded planets.
         While this information is also available in the GUI, I found it more convenient to have the data separately in
         order to adequately analyze the data and plan my next career route.
+    </li>
+    <li>
+        <b>directDirectorySelection:</b> By setting <i>this</i> to true you choose the folder that contains the star system
+        JSON files directly instead of just selecting the main BATTLETECH folder.
+        <b>WARNING!!!</b> Make sure that you select the right folder (by either entering the right
+        path in the INI file or deleting the old path from <i>lastDir</i> and then selecting the path through the dialog),
+        otherwise the program will not work correctly.
     </li>
     <li><b>useLog:</b> This is basically a debug option. Setting this to "<i>true</i>" will then create a "log.html"
         when running the program which displays some info about the program.</li>

@@ -37,9 +37,11 @@ ArrayList<StarSystem> starSystemSelection;
 public BTstats(JFrame parentFrame) {
     starSystems = null;
 
-    File mainPathFile = getInputFile(true, parentFrame);
-    if(mainPathFile != null) {
-        File starsystemFile = new File(mainPathFile.getPath() + "\\BattleTech_Data\\StreamingAssets\\data\\starsystem");
+    File pathFile = getInputFile(true, parentFrame);
+    if(pathFile != null) {
+        File starsystemFile = null;
+        if(MSSettings.directDirectorySelection) { starsystemFile = new File(pathFile.getPath()); }
+        else { starsystemFile = new File(pathFile.getPath() + "\\BattleTech_Data\\StreamingAssets\\data\\starsystem"); }
         starSystems = new ArrayList<>();
 
         for (File fileEntry : starsystemFile.listFiles()) {
@@ -367,7 +369,9 @@ public void setStarSystems(ArrayList<StarSystem> starSystems) { this.starSystems
 public static File getInputFile(boolean useLastDir, JFrame parentFrame) {
     File btPathFile = null;
     if(useLastDir && (MSSettings.lastBTdir != null)) {
-        File starsystemFile = new File(MSSettings.lastBTdir.getPath() + "\\BattleTech_Data\\StreamingAssets\\data\\starsystem");
+        File starsystemFile = null;
+        if(MSSettings.directDirectorySelection) { starsystemFile = new File(MSSettings.lastBTdir.getPath()); }
+        else { starsystemFile = new File(MSSettings.lastBTdir.getPath() + "\\BattleTech_Data\\StreamingAssets\\data\\starsystem"); }
         if (starsystemFile.exists()) {
 //            MSSettings.lastBTdir = filename;
             return MSSettings.lastBTdir;
@@ -382,7 +386,9 @@ public static File getInputFile(boolean useLastDir, JFrame parentFrame) {
         if (a == JFileChooser.APPROVE_OPTION) {
 //        if(MSSettings.useErrorLog) { MSSettings.Logger.logEntry("selected file: " + btPathFile.getName(), MSSettings.MessageLevel.DEBUG, this.getClass().getSimpleName() + "." + "BTstats"); }
             btPathFile = fc.getSelectedFile();
-            File starsystemFile = new File(fc.getSelectedFile().getPath() + "\\BattleTech_Data\\StreamingAssets\\data\\starsystem");
+            File starsystemFile = null;
+            if(MSSettings.directDirectorySelection) { starsystemFile = new File(btPathFile.getPath()); }
+            else { starsystemFile = new File(btPathFile + "\\BattleTech_Data\\StreamingAssets\\data\\starsystem"); }
             if (MSSettings.useLog) {
                 MSSettings.Logger.logEntry("btPathFile: " + starsystemFile.getAbsoluteFile(), MSSettings.MessageLevel.DEBUG, "BTstats.getInputFile");
             }

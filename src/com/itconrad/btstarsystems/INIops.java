@@ -57,12 +57,20 @@ public static void readINI() {
 //                                if(MSSettings.useLog) { MSSettings.Logger.logEntry("setting debug to true", MSSettings.MessageLevel.INFO, "MSSettings.readINI"); }
 //                            }
 //                        }
+                    else if (line.startsWith("directDirectorySelection=")) {
+                        if(MSSettings.useLog) { MSSettings.Logger.logEntry("found directDirectorySelection line: " + line.substring(25), MSSettings.MessageLevel.DEBUG, "MSSettings.readINI"); }
+                        if(line.substring(25).equalsIgnoreCase("true")) {  MSSettings.directDirectorySelection = true;
+                            if(MSSettings.useLog) { MSSettings.Logger.logEntry("setting directDirectorySelection to true", MSSettings.MessageLevel.INFO, "MSSettings.readINI"); }
+                        }
+                    }
                     else if (line.startsWith("lastDir=")) {
                         if(MSSettings.useLog) { MSSettings.Logger.logEntry("found lastDir line: " + line.substring(8), MSSettings.MessageLevel.DEBUG, "MSSettings.readINI"); }
                         String s = line.substring(8);
-                        File nf = new File(line.substring(8) + "\\BattleTech_Data\\StreamingAssets\\data\\starsystem");
-                        if(MSSettings.useLog) { MSSettings.Logger.logEntry("lastDir exists?: " + new File(s + "\\BattleTech_Data\\StreamingAssets\\data\\starsystem").exists(), MSSettings.MessageLevel.INFO, "MSSettings.readINI"); }
-                        if(new File(s + "\\BattleTech_Data\\StreamingAssets\\data\\starsystem").exists()) {
+                        File nf = null;
+                        if(MSSettings.directDirectorySelection) { nf = new File(line.substring(8)); }
+                        else { nf = new File(line.substring(8) + "\\BattleTech_Data\\StreamingAssets\\data\\starsystem"); }
+                        if(MSSettings.useLog) { MSSettings.Logger.logEntry("lastDir exists?: " + nf.exists(), MSSettings.MessageLevel.INFO, "MSSettings.readINI"); }
+                        if(nf.exists()) {
                             MSSettings.lastBTdir = new File(s);
                         }
                     }
@@ -182,7 +190,6 @@ public static void readINI() {
 public static void writeIni() {
     File iniFile = new File("btstats.ini");
     try {
-        System.out.println("Shutting down...");
         StringBuilder sb = new StringBuilder("[BATTLETECH settings]\nuseLog=");
         String s = MSSettings.useLog ? "true" : "false";
 //            sb.append(s + "\ndebug=");
@@ -199,10 +206,13 @@ public static void writeIni() {
         s = MSSettings.showShopItems ? "true" : "false";
         sb.append(s + "\nshowPlanetDescription=");
         s = MSSettings.showPlanetDescription ? "true" : "false";
+        sb.append(s + "\nframeWidth=" + MSSettings.myFrame.getBounds().width + "\nframeHeight=" + MSSettings.myFrame.getBounds().height);
+        sb.append("\nframeX=" + MSSettings.myFrame.getBounds().x + "\nframeY=" + MSSettings.myFrame.getBounds().y);
+        sb.append("\n; Use directDirectorySelection=true to directly select the folder where the star system JSON files are located.\n" +
+                  "; WARNING! This disables certain safety checks, so make sure you have entered/selected the correct folder!\ndirectDirectorySelection=");
+        s = MSSettings.directDirectorySelection ? "true" : "false";
         sb.append(s + "\n; lastDir is the last used BATTLETECH main directory (e.g. C:\\Program Files\\BATTLETECH)\nlastDir=");
         if(MSSettings.lastBTdir != null) { sb.append(MSSettings.lastBTdir.getAbsolutePath()); }
-        sb.append("\nframeWidth=" + MSSettings.myFrame.getBounds().width + "\nframeHeight=" + MSSettings.myFrame.getBounds().height);
-        sb.append("\nframeX=" + MSSettings.myFrame.getBounds().x + "\nframeY=" + MSSettings.myFrame.getBounds().y);
         Files.write(iniFile.toPath(), Collections.singleton(sb.toString()), StandardCharsets.UTF_8);
     }
     catch (Exception e) { System.out.println(e.toString()); }
