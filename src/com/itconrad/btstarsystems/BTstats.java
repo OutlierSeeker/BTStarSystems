@@ -25,34 +25,35 @@ import java.io.File;
 import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class BTstats {
-ArrayList<StarSystem> starSystems;
+
 ArrayList<StarSystem> starSystemSelection;
 
 
+
 public BTstats(JFrame parentFrame) {
-    starSystems = null;
+    MSSettings.starSystems = null;
 
     File pathFile = getInputFile(true, parentFrame);
     if(pathFile != null) {
         File starsystemFile = null;
         if(MSSettings.directDirectorySelection) { starsystemFile = new File(pathFile.getPath()); }
         else { starsystemFile = new File(pathFile.getPath() + "\\BattleTech_Data\\StreamingAssets\\data\\starsystem"); }
-        starSystems = new ArrayList<>();
+        MSSettings.starSystems = new ArrayList<>();
+        MSSettings.intermediaryRoutesSet = false;
 
         for (File fileEntry : starsystemFile.listFiles()) {
-
-
             if(MSSettings.useLog) { MSSettings.Logger.logEntry("file in dir: " + fileEntry.getName(), MSSettings.MessageLevel.DEBUG, this.getClass().getSimpleName() + "." + new Throwable().getStackTrace()[0].getMethodName()); }
             if(fileEntry.getName().contains("Contested") || fileEntry.getName().contains("Flipped") || fileEntry.getName().contains("Career")) {
                 if(MSSettings.useLog) { MSSettings.Logger.logEntry("skipping file: " + fileEntry.getName(), MSSettings.MessageLevel.INFO, this.getClass().getSimpleName() + "." + "BTstats"); }
                 continue;
             }
-//            JSONParser parser = new JSONParser(fileEntry.getAbsolutePath(), , )
 
             JSONParser parser = new JSONParser();
             FileReader fr = null;
@@ -258,19 +259,9 @@ public BTstats(JFrame parentFrame) {
                         }
                     }
 
-                    starSystems.add(new StarSystem(name, details, xPos, yPos, zPos, jumpDistance, ownerFaction, maxShopSpecials, difficulty, tags, employers, targets));
+                    MSSettings.starSystems.add(new StarSystem(name, details, xPos, yPos, zPos, jumpDistance, ownerFaction, maxShopSpecials, difficulty, tags, employers, targets));
                 }
                 catch (NumberFormatException e) { if(MSSettings.useLog) { MSSettings.Logger.logEntry("Error converting to number: " + jo.get("JumpDistance"), MSSettings.MessageLevel.ERROR, this.getClass().getSimpleName() + "." + "BTstats"); } }
-
-                int i = 1;
-//
-//                if(MSSettings.useLog) { MSSettings.Logger.logEntry("owner: " + owner, MSSettings.MessageLevel.DEBUG, this.getClass().getSimpleName() + "." + "BTstats"); }
-//
-
-//                Iterator<String> it = desc.iterator();
-//                while(it.hasNext()) {
-//                    if(MSSettings.useLog) { MSSettings.Logger.logEntry(it.next(), MSSettings.MessageLevel.DEBUG, this.getClass().getSimpleName() + "." + "BTstats"); }
-//                }
             }
             catch(Exception e) { System.err.println(e.toString());; }
             finally {
@@ -280,49 +271,200 @@ public BTstats(JFrame parentFrame) {
                 }
             }
         }
+
+        boolean readError = false;
+        StarSystem ss, interS;
+        if(MSSettings.iniSystemLines.size() != MSSettings.starSystems.size()) { readError = true; }
+        else {
+            List<String> elements;
+            for(String line : MSSettings.iniSystemLines) {
+                elements = Arrays.asList(line.split(","));
+                if(elements.size() <= 3) { readError = true; break; }
+                else {
+                    ss = MSSettings.getStarSystem(elements.get(0));
+                    if(ss != null) {
+                        if (Double.toString(ss.positionX).equals(elements.get(1)) &&
+                                (Double.toString(ss.positionY).equals(elements.get(2)))) {
+                            for(int i = 3; i < elements.size(); i++) {
+                                interS = MSSettings.getStarSystem(elements.get(i));
+                                if(interS == null) { readError = true; break; }
+                                else {
+                                    ss.closeIntermediarySystems.add(interS);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            MSSettings.intermediaryRoutesSet = true;
+        }
+        if(readError && MSSettings.showIntermediaryRoutes) {
+            setIntermediarySystems();
+        }
+
+//        for(StarSystem s : MSSettings.starSystems) {
+//            ArrayList<StarSystem> less30systems = new ArrayList<>();
+//            ArrayList<StarSystem> between30and60systems = new ArrayList<>();
+//
+//            for(StarSystem t : MSSettings.starSystems) {
+//                if(s != t) {
+//                    double dis = Math.sqrt(MSSettings.calculateSquaredDistance(s, t));
+//                    if(s.name.equals("Jamestown") && MSSettings.useLog) { MSSettings.Logger.logEntry(s.name + " - " + t.name + " :\t" + dis, MSSettings.MessageLevel.TRACE, this.getClass().getSimpleName() + "." + "BTstats"); }
+//                    if(((((s.positionX - t.positionX) * (s.positionX - t.positionX)) + ((s.positionY - t.positionY) * (s.positionY - t.positionY))) <= 900) &&
+//                            ((((s.positionX - t.positionX) * (s.positionX - t.positionX)) + ((s.positionY - t.positionY) * (s.positionY - t.positionY))) > 225))
+//                    {
+//                        s.closeSystems.add(t);
+//                    }
+//
+//
+//                    if(s.name.equals("Jamestown")) {
+//                        double squaredDistance = MSSettings.calculateSquaredDistance(s, t);
+//                        if(squaredDistance <= 900) {
+//                            less30systems.add(t);
+//                            System.out.println("Found close system: " + t.name);
+//                        }
+//                        else if(squaredDistance <= 3600) {
+//                            between30and60systems.add(t);
+//                            System.out.println("Found 30 - 60 system: " + t.name);
+//                        }
+//
+//                    }
+//                }
+//            }
+//
+//            if(s.name.equals("Jamestown")) {
+//                for (StarSystem u : between30and60systems) {
+//                    System.out.println("analyzing " + u.name);
+//                    StarSystem bestDisSystem = null;
+//                    double bestDis = 999999999;
+//                    ArrayList<StarSystem> highestDifSystem = new ArrayList<>();
+//                    int lowestJumpDis = 99999;
+//                    ArrayList<StarSystem> lowestJumpSystem = new ArrayList<>();
+//                    int highestJumpDis = -1;
+//                    ArrayList<StarSystem> lowestDifSystem = new ArrayList<>();
+//                    int lowestDif = 999;
+//                    ArrayList<StarSystem> highestJumpSystem = new ArrayList<>();
+//                    int highestDif = -1;
+//                    ArrayList<StarSystem> highestShopSystem = new ArrayList<>();
+//                    int highestShop = -1;
+//                    StarSystem longestJumpSystem = null;
+//                    double longestJump = -1.0;
+//                    for (StarSystem l30 : less30systems) {
+////                        System.out.println("Looking at " + l30.name);
+//                        double l30squaredDis = MSSettings.calculateSquaredDistance(u, l30);
+//                        if (l30squaredDis <= 900) {
+//                            double sumDis = Math.sqrt(l30squaredDis + MSSettings.calculateSquaredDistance(l30, s));
+//                            if (sumDis < bestDis) {
+//                                bestDis = sumDis;
+//                                bestDisSystem = l30;
+//                            }
+//                            if (l30.jumpDistance < lowestJumpDis) {
+//                                lowestJumpDis = l30.jumpDistance;
+//                                lowestJumpSystem.clear();
+//                                lowestJumpSystem.add(l30);
+//                            }
+//                            else if (l30.jumpDistance == lowestJumpDis) { lowestJumpSystem.add(l30); }
+//                            if (l30.jumpDistance > highestJumpDis) {
+//                                highestJumpDis = l30.jumpDistance;
+//                                highestJumpSystem.clear();
+//                                highestJumpSystem.add(l30);
+//                            }
+//                            else if(l30.jumpDistance == highestJumpDis) { highestJumpSystem.add(l30); }
+//                            if (l30.difficulty.getNumber() < lowestDif) {
+//                                lowestDif = l30.difficulty.getNumber();
+//                                lowestDifSystem.clear();
+//                                lowestDifSystem.add(l30);
+//                            }
+//                            else if(l30.difficulty.getNumber() == lowestDif) { lowestDifSystem.add(l30); }
+//                            if (l30.difficulty.getNumber() > highestDif) {
+//                                highestDif = l30.difficulty.getNumber();
+//                                highestDifSystem.clear();
+//                                highestDifSystem.add(l30);
+//                            }
+//                            else if(l30.jumpDistance == highestDif) { highestDifSystem.add(l30); }
+//                            if (l30.maxShopSpecials > highestShop) {
+//                                highestShop = l30.maxShopSpecials;
+//                                highestShopSystem.clear();
+//                                highestShopSystem.add(l30);
+//                            }
+//                            else if(l30.maxShopSpecials == highestShop) { highestShopSystem.add(l30); }
+//                            double jumpDistance = MSSettings.calculateSquaredDistance(s, l30);
+//                            if (jumpDistance > longestJump) {
+//                                longestJump = jumpDistance;
+//                                longestJumpSystem = l30;
+//                            }
+//                            else if(l30.maxShopSpecials == highestShop) { highestShopSystem.add(l30); }
+//                        }
+//                    }
+//                    if ((bestDis < 999999999) && MSSettings.useLog) {
+//                        MSSettings.Logger.logEntry(s.name + " - " + u.name + " : best distance system: " + bestDisSystem.name + " (" + bestDis + ")", MSSettings.MessageLevel.INFO, this.getClass().getSimpleName() + "." + "BTstats");
+//                    }
+//                    else { MSSettings.Logger.logEntry("No direct connection found for " + u.name, MSSettings.MessageLevel.ERROR, this.getClass().getSimpleName() + "." + "BTstats"); }
+//                    StringBuilder names = new StringBuilder();
+//                    for(StarSystem star : lowestJumpSystem) { names.append(star.name + ", "); }
+//                    if ((lowestJumpDis < 99999) && MSSettings.useLog) {
+//                        MSSettings.Logger.logEntry(s.name + " - " + u.name + " : lowest jump system: " + names.toString() + " (" + lowestJumpDis + ")", MSSettings.MessageLevel.INFO, this.getClass().getSimpleName() + "." + "BTstats");
+//                    }
+//                    names = new StringBuilder();
+//                    for(StarSystem star : highestJumpSystem) { names.append(star.name + ", "); }
+//                    if ((highestJumpDis > -1) && MSSettings.useLog) {
+//                        MSSettings.Logger.logEntry(s.name + " - " + u.name + " : highest jump system: " + names + " (" + highestJumpDis + ")", MSSettings.MessageLevel.INFO, this.getClass().getSimpleName() + "." + "BTstats");
+//                    }
+//                    names = new StringBuilder();
+//                    for(StarSystem star : lowestDifSystem) { names.append(star.name + ", "); }
+//                    if ((lowestDif < 999) && MSSettings.useLog) {
+//                        MSSettings.Logger.logEntry(s.name + " - " + u.name + " : lowest skull system: " + names + " (" + lowestDif + ")", MSSettings.MessageLevel.INFO, this.getClass().getSimpleName() + "." + "BTstats");
+//                    }
+//                    names = new StringBuilder();
+//                    for(StarSystem star : highestDifSystem) { names.append(star.name + ", "); }
+//                    if ((highestDif > -1) && MSSettings.useLog) {
+//                        MSSettings.Logger.logEntry(s.name + " - " + u.name + " : highest skull system: " + names + " (" + highestDif + ")", MSSettings.MessageLevel.INFO, this.getClass().getSimpleName() + "." + "BTstats");
+//                    }
+//                    names = new StringBuilder();
+//                    for(StarSystem star : highestShopSystem) { names.append(star.name + ", "); }
+//                    if ((highestShop > -1) && MSSettings.useLog) {
+//                        MSSettings.Logger.logEntry(s.name + " - " + u.name + " : highest shop system: " + names + " (" + highestShop + ")", MSSettings.MessageLevel.INFO, this.getClass().getSimpleName() + "." + "BTstats");
+//                    }
+//                    if ((longestJump > -1.0) && MSSettings.useLog) {
+//                        MSSettings.Logger.logEntry(s.name + " - " + u.name + " : longest first jump system: " + longestJumpSystem.name + " (" + longestJump + ")", MSSettings.MessageLevel.INFO, this.getClass().getSimpleName() + "." + "BTstats");
+//                    }
+//                }
+//            }
+//
+//            if(MSSettings.useLog) {
+//                StringBuilder sd = new StringBuilder();
+//                MSSettings.Logger.logEntry(s.name + " - " + t.name + " :\t" + dis, MSSettings.MessageLevel.TRACE, this.getClass().getSimpleName() + "." + "BTstats");
+//            }
+//
+//        }
         starSystemSelection = new ArrayList<>();
-        starSystemSelection.addAll(starSystems);
+        starSystemSelection.addAll(MSSettings.starSystems);
+
+        MSSettings.squaredDistanceMatrix = new double[MSSettings.starSystems.size()][MSSettings.starSystems.size()];
+        for(int i = 0; i < MSSettings.starSystems.size(); i++) {
+            for(int j = 0; j < MSSettings.starSystems.size(); j++) {
+                if(i == j) { MSSettings.squaredDistanceMatrix[i][j] = 0; }
+                else if(j > i) {
+                    MSSettings.squaredDistanceMatrix[i][j] = MSSettings.calculateSquaredDistance(MSSettings.starSystems.get(i), MSSettings.starSystems.get(j));
+                    MSSettings.squaredDistanceMatrix[j][i] = MSSettings.squaredDistanceMatrix[i][j];
+                }
+            }
+        }
 
         /** Calculate various aspects: */
         if(MSSettings.calculateStats) {
-//            double minX = 99999;
-//            String minXname = "";
-//            double minY = 99999;
-//            String minYname = "";
-//            double maxX = -99999;
-//            String maxXname = "";
-//            double maxY = -99999;
-//            String maxYname = "";
-//            for(StarSystem s : starSystems) {
-//                if(s.positionX < minX) { minX = s.positionX; minXname = s.name; }
-//                else if(s.positionX > maxX) { maxX = s.positionX; maxXname = s.name; }
-//                if(s.positionY < minY) { minY = s.positionY; minYname = s.name; }
-//                else if(s.positionY > maxY) { maxY = s.positionY; maxYname = s.name; }
-//            }
-//            System.out.println("Minimal: x: " + minX + " (" + minXname + "), y: " + minY + " (" + minYname +
-//                    ")\nMaximum: x: " + maxX + " (" + maxXname + "), y: " + maxY + " (" + maxYname + ")");
-//
-//            int maxEmployers = 0;
-//            StarSystem maxEmpSS = null;
-//        int maxTargets = 0;
-//        StarSystem maxTarSS = null;
-//        for(StarSystem s : starSystems) {
-//                if(s.employers.size() > maxEmployers) { maxEmployers = s.employers.size(); maxEmpSS = s; }
-//                if(s.targets.size() > maxTargets) { maxTargets = s.targets.size(); maxTarSS = s; }
-//            }
-
             int[][] owners = new int[MSSettings.OwnerFactions.values().length][9];
             int[] differenceEmpTarget = new int[MSSettings.Factions.values().length];
             int[][] employers = new int[MSSettings.Factions.values().length][9];
             int[][] targets = new int[MSSettings.Factions.values().length][9];
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 owners[s.owner.ordinal()][s.difficulty.getNumber()-1]++;
                 for(MSSettings.Factions f : s.employers) { employers[f.ordinal()][s.difficulty.getNumber()-1]++; }
                 for(MSSettings.Factions f : s.targets) { targets[f.ordinal()][s.difficulty.getNumber()-1]++; }
             }
             File statFile = new File("stats.csv");
             try {
-                StringBuilder sb = new StringBuilder("BATTLETECH Statistics for " + starSystems.size() + " Star Systems\n");
+                StringBuilder sb = new StringBuilder("BATTLETECH Statistics for " + MSSettings.starSystems.size() + " Star Systems\n");
                 sb.append("\nOwner Faction;0.5;1;1.5;2;2.5;3;3.5;4;4.5;Total\n");
                 for(int i = 0; i < MSSettings.OwnerFactions.values().length; i++) {
                     sb.append(MSSettings.OwnerFactions.values()[i].getDisplayName() + ";");
@@ -344,9 +486,11 @@ public BTstats(JFrame parentFrame) {
                     for(int j = 0; j < 9; j++) { sb.append(targets[i][j] + ";"); sum += targets[i][j]; }
                     sb.append(sum + "\n");
                 }
-                sb.append("\nSystem Name;Owner;Difficulty;# of Employers;# of Targets;Max. # of Special Shop Items\n");
-                for(StarSystem s : starSystems) {
-                    sb.append(s.name + ";" + s.owner.getDisplayName() + ";" + s.difficulty.getDisplayName() + ";" + s.employers.size() + ";" + s.targets.size() + ";" + s.maxShopSpecials + "\n");
+                sb.append("\nSystem Name;Owner;Difficulty;Jump Distance;# of Employers;# of Targets;Max. # of Special Shop Items;Travel List\n");
+                for(StarSystem s : MSSettings.starSystems) {
+                    sb.append(s.name + ";" + s.owner.getDisplayName() + ";" + s.difficulty.getDisplayName() + ";" + s.jumpDistance + ";" + s.employers.size() + ";" + s.targets.size() + ";" + s.maxShopSpecials);
+                    for(StarSystem t : s.closeIntermediarySystems) { sb.append(";" + t.name); }
+                    sb.append("\n");
                 }
                 Files.write(statFile.toPath(), Collections.singleton(sb.toString()), StandardCharsets.UTF_8);
             }
@@ -354,11 +498,6 @@ public BTstats(JFrame parentFrame) {
         }
     }
 }
-
-public ArrayList<StarSystem> getStarSystems() {
-    return starSystems;
-}
-public void setStarSystems(ArrayList<StarSystem> starSystems) { this.starSystems = starSystems; }
 
 /**
  * Returns a valid path to the BATTLETECH main directory
@@ -417,102 +556,159 @@ public static File getInputFile(boolean useLastDir, JFrame parentFrame) {
  * 1 - included
  * 2 - excluded
  * */
-public void updateSelection(int[] owners, int[] employers, int[] targets, int[] tags, int[] difficulties, int[] shopSpecials) {
+public void updateSelection(int[] owners, int[] employers, int[] targets, int[] tags, int[] difficulties, int[] jumpDistances, int[] shopSpecials) {
     if((owners.length != MSSettings.OwnerFactions.values().length) ||
             (employers.length != MSSettings.Factions.values().length) ||
             (targets.length != MSSettings.Factions.values().length) ||
             (tags.length != MSSettings.TagItem.values().length) ||
             (difficulties.length != MSSettings.Difficulties.values().length) ||
+            (jumpDistances.length != MSSettings.jumpDistances.length) ||
             (shopSpecials.length != MSSettings.maxShopSpecialStrings.length)
     )
     {
         if(MSSettings.useLog) { MSSettings.Logger.logEntry("array length doesn't match!", MSSettings.MessageLevel.ERROR, "BTstats.updateSelection"); }
     }
-    if(starSystemSelection.size() != starSystems.size()) {
+    if(starSystemSelection.size() != MSSettings.starSystems.size()) {
         starSystemSelection = new ArrayList<>();
-        starSystemSelection.addAll(starSystems);
+        starSystemSelection.addAll(MSSettings.starSystems);
     }
 //    ArrayList<StarSystem> tempSelection = new ArrayList<>();
-//    tempSelection.addAll(starSystems);
+//    tempSelection.addAll(MSSettings.starSystems);
     /** owners, these loops actually don't make much sense for owners. :/  */
     for(int i = 0; i < owners.length; i++) {
         if(owners[i] == 1) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(s.owner != MSSettings.OwnerFactions.values()[i]) { starSystemSelection.remove(s); }
             }
         }
         else if(owners[i] == 2) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(s.owner == MSSettings.OwnerFactions.values()[i]) { starSystemSelection.remove(s); }
             }
         }
     }
     for(int i = 0; i < employers.length; i++) {
         if(employers[i] == 1) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(!s.hasEmployer(MSSettings.Factions.values()[i])) { starSystemSelection.remove(s); }
             }
         }
         else if(employers[i] == 2) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(s.hasEmployer(MSSettings.Factions.values()[i])) { starSystemSelection.remove(s); }
             }
         }
     }
     for(int i = 0; i < targets.length; i++) {
         if(targets[i] == 1) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(!s.hasTarget(MSSettings.Factions.values()[i])) { starSystemSelection.remove(s); }
             }
         }
         else if(targets[i] == 2) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(s.hasTarget(MSSettings.Factions.values()[i])) { starSystemSelection.remove(s); }
             }
         }
     }
     for(int i = 0; i < tags.length; i++) {
         if(tags[i] == 1) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(!s.hasTag(MSSettings.TagItem.values()[i])) { starSystemSelection.remove(s); }
             }
         }
         else if(tags[i] == 2) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(s.hasTag(MSSettings.TagItem.values()[i])) { starSystemSelection.remove(s); }
             }
         }
     }
     for(int i = 0; i < difficulties.length; i++) {
         if(difficulties[i] == 1) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(!(s.difficulty.getNumber() == (i + 1))) { starSystemSelection.remove(s); }
             }
         }
         else if(difficulties[i] == 2) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(s.difficulty.getNumber() == (i + 1)) { starSystemSelection.remove(s); }
+            }
+        }
+    }
+    for(int i = 0; i < jumpDistances.length; i++) {
+        if(jumpDistances[i] == 1) {
+            for(StarSystem s : MSSettings.starSystems) {
+                if(!(s.jumpDistance == (i + MSSettings.minJump))) { starSystemSelection.remove(s); }
+            }
+        }
+        else if(jumpDistances[i] == 2) {
+            for(StarSystem s : MSSettings.starSystems) {
+                if(s.jumpDistance == (i + MSSettings.minJump)) { starSystemSelection.remove(s); }
             }
         }
     }
     for(int i = 0; i < shopSpecials.length; i++) {
         if(shopSpecials[i] == 1) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(!(s.maxShopSpecials == (i + 2))) { starSystemSelection.remove(s); }
             }
         }
         else if(shopSpecials[i] == 2) {
-            for(StarSystem s : starSystems) {
+            for(StarSystem s : MSSettings.starSystems) {
                 if(s.maxShopSpecials == (i + 2)) { starSystemSelection.remove(s); }
             }
         }
     }
-
-    int as = 2;
 }
 
-///** An attribute that implements selection via RadioButtons */
-//public class RadioAttribute {
-//
-//}
+public void setIntermediarySystems() {
+    System.out.println("Setting Intermediary");
+    for(StarSystem s : MSSettings.starSystems) { s.closeIntermediarySystems = new ArrayList<>(); }
+    long startTime = System.nanoTime();
+    /** Calculating neighboring intermediary systems: */
+    ArrayList<StarPair> intermediaryStarSystems = new ArrayList<>();
+    ExecutorService eService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+    java.util.List<Callable<StarPair>> starTasks = new ArrayList<>();
+    for(StarSystem s : MSSettings.starSystems) {
+        for (StarSystem t : MSSettings.starSystems) {
+            if (s != t) {
+                double dis = MSSettings.getSquaredDistance(s, t);
+                if ((dis < 3600) && (dis > 900)) {
+                    starTasks.add(() -> {
+                        return new StarPair(s, new AStarTravel(s, t).travelRoute.get(1));
+                    });
+                }
+            }
+        }
+    }
+    List<Future<StarPair>> starSystemRuns = new ArrayList<>();
+    for(Callable<StarPair> task : starTasks) {
+        starSystemRuns.add(eService.submit(task));
+    }
+    starSystemRuns.forEach(res -> {
+        try {
+            StarPair sp = res.get();
+            if(sp != null) { intermediaryStarSystems.add(res.get()); }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    });
+    for(StarPair sp : intermediaryStarSystems) {
+        if(!sp.originSystem.closeIntermediarySystems.contains(sp.connected)) { sp.originSystem.closeIntermediarySystems.add(sp.connected); }
+    }
+    MSSettings.intermediaryRoutesSet = true;
+
+    if(MSSettings.useLog) { MSSettings.Logger.logEntry("A* calculation took " + ((System.nanoTime() - startTime) / 1000) + " microseconds.", MSSettings.MessageLevel.DEBUG, this.getClass().getSimpleName() + "." + "BTstats"); }
+}
+
+
+public class StarPair {
+    StarSystem originSystem;
+    StarSystem connected;
+
+    public StarPair(StarSystem originSystem, StarSystem connected) {
+        this.originSystem = originSystem;
+        this.connected = connected;
+    }
+}
 }

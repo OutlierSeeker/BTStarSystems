@@ -60,6 +60,9 @@ int[] tagStats;
 RadioAttribute difficultiesRadioAttribute;
 int[] selectedDifficulties;
 int[] difficultiesStats;
+RadioAttribute jumpDistanceRadioAttribute;
+int[] selectedJumpDistances;
+int[] jumpDistanceStats;
 RadioAttribute shopItemsRadioAttribute;
 int[] selectedShopItems;
 int[] shopItemsStats;
@@ -84,14 +87,17 @@ public StatFrame() {
     }
     catch (Exception e) { e.toString(); }
     stats = new BTstats(this);
+//    AStarTravel travel = new AStarTravel(stats, stats.getStarSystem("Jamestown"), stats.getStarSystem("Brisbane"));
+//    travel = new AStarTravel(stats, stats.getStarSystem("Brisbane"), stats.getStarSystem("Jamestown"));
 
     fillFrame();
+
 //    fillFrameWithStats();
 }
 
 public void fillFrame() {
     getContentPane().removeAll();
-    if (stats.starSystems == null) {
+    if (MSSettings.starSystems == null) {
         JButton openButton = new JButton("<html>Open BATTLETECH folder</html>");
         openButton.setPreferredSize(new Dimension(200, 200));
         add(openButton, BorderLayout.CENTER);
@@ -139,12 +145,23 @@ public void fillFrame() {
             difficultyStrings[i] = v.getDisplayName();
             i++;
         }
+        MSSettings.minJump = 9999999;
+        MSSettings.maxJump = -9999999;
+        for(StarSystem s : MSSettings.starSystems) {
+            if(s.jumpDistance < MSSettings.minJump) { MSSettings.minJump = (int)s.jumpDistance; }
+            if(s.jumpDistance > MSSettings.maxJump) { MSSettings.maxJump = (int)s.jumpDistance; }
+        }
+        MSSettings.jumpDistances = new String[MSSettings.maxJump - MSSettings.minJump + 1];
+        for(int j = 0; j < MSSettings.jumpDistances.length; j++) {
+            MSSettings.jumpDistances[j] = Integer.toString(MSSettings.minJump + j);
+        }
         /** Adding Attributes: */
         ownerRadioAttribute = new RadioAttribute(MSSettings.StarAttributes.OWNER, ownerFactionStrings);
         employerRadioAttribute = new RadioAttribute(MSSettings.StarAttributes.EMPLOYERS, factionStrings);
         targetRadioAttribute = new RadioAttribute(MSSettings.StarAttributes.TARGETS, factionStrings);
         tagsRadioAttribute = new RadioAttribute(MSSettings.StarAttributes.TAG, tagStrings);
         difficultiesRadioAttribute = new RadioAttribute(MSSettings.StarAttributes.DIFFICULTIES, difficultyStrings);
+        jumpDistanceRadioAttribute = new RadioAttribute(MSSettings.StarAttributes.JUMPDISTANCES, MSSettings.jumpDistances);
         shopItemsRadioAttribute = new RadioAttribute(MSSettings.StarAttributes.MAXSHOPSPECIALS, MSSettings.maxShopSpecialStrings);
 
         currentOptionRow++;
@@ -171,7 +188,7 @@ public void fillFrame() {
         planetScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         planetScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         planetScroll.setPreferredSize(new Dimension(220, 100));
-        planetArray = new PlanetPanel[stats.starSystems.size()];
+        planetArray = new PlanetPanel[MSSettings.starSystems.size()];
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(0, 0, 0, 0);
         constraints.fill = GridBagConstraints.HORIZONTAL;
@@ -183,7 +200,7 @@ public void fillFrame() {
         constraints.gridy = 0;
         constraints.gridy++;
         i = 0;
-        for (StarSystem s : stats.starSystems) {
+        for (StarSystem s : MSSettings.starSystems) {
             planetArray[i] = new PlanetPanel(s);
             planetGridPane.add(planetArray[i], constraints);
             i++;
@@ -211,12 +228,9 @@ public void updateRadioArrays(boolean repaint) {
     selectedTargets = targetRadioAttribute.getSelectedRadios();
     selectedTags = tagsRadioAttribute.getSelectedRadios();
     selectedDifficulties = difficultiesRadioAttribute.getSelectedRadios();
+    selectedJumpDistances = jumpDistanceRadioAttribute.getSelectedRadios();
     selectedShopItems = shopItemsRadioAttribute.getSelectedRadios();
-    if (MSSettings.useLog) {
-        MSSettings.Logger.logEntry("owners: " + selectedOwners.toString(), MSSettings.MessageLevel.DEBUG, this.getClass().getSimpleName() + "." + new Object() {
-        }.getClass().getEnclosingMethod().getName());
-    }
-    stats.updateSelection(selectedOwners, selectedEmployers, selectedTargets, selectedTags, selectedDifficulties, selectedShopItems);
+    stats.updateSelection(selectedOwners, selectedEmployers, selectedTargets, selectedTags, selectedDifficulties, selectedJumpDistances, selectedShopItems);
 
     /** Step 2: Collect stats */
     ownerStats = new int[MSSettings.OwnerFactions.values().length];
@@ -247,6 +261,10 @@ public void updateRadioArrays(boolean repaint) {
     for (StarSystem s : stats.starSystemSelection) {
         difficultiesStats[s.difficulty.getNumber() - 1]++;
     }
+    jumpDistanceStats = new int[MSSettings.jumpDistances.length];
+    for (StarSystem s : stats.starSystemSelection) {
+        jumpDistanceStats[s.jumpDistance - MSSettings.minJump]++;
+    }
     shopItemsStats = new int[MSSettings.maxShopSpecialStrings.length];
     for (StarSystem s : stats.starSystemSelection) {
         shopItemsStats[s.maxShopSpecials - 2]++;
@@ -259,6 +277,7 @@ public void updateRadioArrays(boolean repaint) {
     targetRadioAttribute.setLabelStats(targetStats);
     tagsRadioAttribute.setLabelStats(tagStats);
     difficultiesRadioAttribute.setLabelStats(difficultiesStats);
+    jumpDistanceRadioAttribute.setLabelStats(jumpDistanceStats);
     shopItemsRadioAttribute.setLabelStats(shopItemsStats);
 
     /** Step 4: Show/Hide planets */
@@ -398,10 +417,9 @@ public class RadioAttribute implements ActionListener {
 
     public void setLabelStats(int[] values) {
         for (int i = 0; i < statLabels.length; i++) {
-            if (MSSettings.useLog) {
-                MSSettings.Logger.logEntry("Setting " + statLabels[i].getText() + " to " + labelStrings[i] + " (" + values[i] + ")", MSSettings.MessageLevel.DEBUG, this.getClass().getSimpleName() + "." + new Object() {
-                }.getClass().getEnclosingMethod().getName());
-            }
+//            if (MSSettings.useLog) {
+//                MSSettings.Logger.logEntry("Setting " + statLabels[i].getText() + " to " + labelStrings[i] + " (" + values[i] + ")", MSSettings.MessageLevel.DEBUG, this.getClass().getSimpleName() + "." + new Object() {}.getClass().getEnclosingMethod().getName());
+//            }
             statLabels[i].setText(labelStrings[i] + " (" + values[i] + ")");
         }
     }
@@ -702,7 +720,7 @@ public class PlanetPanel extends JPanel {
                 targetsPanel.setVisible(true);
                 propertiesTitleLabel.setVisible(true);
                 propertiesLabel.setVisible(true);
-                if (MSSettings.showPlanetDescription) {
+                if (MSSettings.showSystemDescription) {
                     descriptionTitleLabel.setVisible(true);
                     descriptionText.setVisible(true);
                 }
@@ -752,8 +770,15 @@ public class PlanetPanel extends JPanel {
 
 
 public class StarMap extends JLayeredPane {
+//    Font titleFont = new Font("Arial", Font.BOLD, 12);
     Font titleFont = new Font("Arial", Font.BOLD, 12);
+    Font titleFontBig = new Font("Arial", Font.BOLD, 18);
     int starSize = 16;
+    double starDiv = starSize / 4;
+    Color intermediaryConnectionColor = new Color(0, 200, 0);
+    Color intermediaryConnectionOnWhiteColor = new Color(0, 200, 0);
+    Color noIntermediaryConnectionColor = new Color(85, 85, 85);
+    Color noIntermediaryConnectionOnWhiteColor = new Color(135, 135, 135);
     int maxDrawnX = 1000;
     int maxDrawnY = 800;
     JLabel titleLabel;
@@ -771,6 +796,8 @@ public class StarMap extends JLayeredPane {
     public JCheckBox detailsBox;
     JPanel shopPanel;
     public JCheckBox shopBox;
+    JPanel intermediariesPanel;
+    public JCheckBox intermediariesBox;
     JButton saveButton;
     JButton folderButton;
     ImageIcon optionsIcon;
@@ -830,6 +857,7 @@ public class StarMap extends JLayeredPane {
                 marketPanel.setVisible(false);
                 starleaguePanel.setVisible(false);
                 detailsPanel.setVisible(false);
+                intermediariesPanel.setVisible(false);
                 shopPanel.setVisible(false);
                 saveButton.setVisible(false);
                 folderButton.setVisible(false);
@@ -841,6 +869,7 @@ public class StarMap extends JLayeredPane {
                 marketPanel.setVisible(true);
                 starleaguePanel.setVisible(true);
                 detailsPanel.setVisible(true);
+                intermediariesPanel.setVisible(true);
                 shopPanel.setVisible(true);
                 saveButton.setVisible(true);
                 folderButton.setVisible(true);
@@ -947,14 +976,31 @@ public class StarMap extends JLayeredPane {
         detailsBox.setForeground(Color.WHITE);
         detailsBox.setBackground(Color.BLACK);
         detailsBox.setOpaque(false);
-        detailsBox.setSelected(MSSettings.showPlanetDescription);
+        detailsBox.setSelected(MSSettings.showSystemDescription);
         detailsBox.addActionListener(e -> {
-            MSSettings.showPlanetDescription = detailsBox.isSelected();
+            MSSettings.showSystemDescription = detailsBox.isSelected();
             this.revalidate();
             this.repaint();
         });
         detailsPanel.add(detailsBox);
         detailsPanel.setVisible(false);
+
+        intermediariesPanel = new JPanel();
+        intermediariesPanel.setLayout(new BoxLayout(intermediariesPanel, BoxLayout.PAGE_AXIS));
+        intermediariesPanel.setBackground(Color.BLACK);
+        intermediariesBox = new JCheckBox("Show Travel Lines");
+        intermediariesBox.setAlignmentX(0.0f);
+        intermediariesBox.setForeground(Color.WHITE);
+        intermediariesBox.setBackground(Color.BLACK);
+        intermediariesBox.setOpaque(false);
+        intermediariesBox.setSelected(MSSettings.showIntermediaryRoutes);
+        intermediariesBox.addActionListener(e -> {
+            MSSettings.showIntermediaryRoutes = intermediariesBox.isSelected();
+            this.revalidate();
+            this.repaint();
+        });
+        intermediariesPanel.add(intermediariesBox);
+        intermediariesPanel.setVisible(false);
 
         shopPanel = new JPanel();
         shopPanel.setLayout(new BoxLayout(shopPanel, BoxLayout.PAGE_AXIS));
@@ -1010,6 +1056,7 @@ public class StarMap extends JLayeredPane {
         add(starleaguePanel, 1);
         add(detailsPanel, 1);
         add(shopPanel, 1);
+        add(intermediariesPanel, 1);
         add(saveButton, 1);
         add(folderButton, 1);
     }
@@ -1024,8 +1071,8 @@ public class StarMap extends JLayeredPane {
         maxDrawnX = 0;
         maxDrawnY = 0;
 
-        if (stats.starSystems != null) {
-            titleLabel.setText("Showing " + stats.starSystemSelection.size() + " of " + stats.starSystems.size() + " systems");
+        if (MSSettings.starSystems != null) {
+            titleLabel.setText("Showing " + stats.starSystemSelection.size() + " of " + MSSettings.starSystems.size() + " systems");
             int yNew = 20;
             int yMargin = 4;
             int yHeight = 25;
@@ -1049,6 +1096,8 @@ public class StarMap extends JLayeredPane {
             starleaguePanel.setBounds(10, yNew, 130, yHeight);
             yMargin = 4;
             yNew = yNew + yMargin + yHeight;
+            intermediariesPanel.setBounds(10, yNew, 200, yHeight);
+            yNew = yNew + yMargin + yHeight;
             shopPanel.setBounds(10, yNew, 250, yHeight);
             yNew = yNew + yMargin + yHeight;
             detailsPanel.setBounds(10, yNew, 250, yHeight);
@@ -1070,33 +1119,63 @@ public class StarMap extends JLayeredPane {
                 Point p = convertCoordinateToCanvas(activeSystem.positionX, activeSystem.positionY);
                 activeStarSystemImage.paintIcon(this, g, (p.x - 42), (p.y - 40));
             }
-            for (StarSystem s : stats.starSystemSelection) { drawStar(g, s, false, true, skullBox.isSelected(), marketBox.isSelected(), starleaguBox.isSelected()); }
+
+            if(MSSettings.showIntermediaryRoutes) {
+                if(!MSSettings.intermediaryRoutesSet) { stats.setIntermediarySystems(); }
+                for (StarSystem s : stats.starSystemSelection) {
+                    drawTravelLines(g, s, false);
+                }
+            }
+            for (StarSystem s : stats.starSystemSelection) { drawStar(g, s, false, true, false, skullBox.isSelected(), marketBox.isSelected(), starleaguBox.isSelected()); }
         }
     }
 
-    public void drawStar(Graphics2D g, StarSystem s, boolean drawWhite, boolean drawFactionColors, boolean drawSkulls, boolean drawBlackMarket, boolean drawStarleague) {
+    public void drawTravelLines(Graphics2D g, StarSystem s, boolean drawOnWhite) {
+        Point s_p = convertCoordinateToCanvas(s.positionX, s.positionY);
+//        Point sAdjusted = new Point((s_p.x + (starSize / 2)), (s_p.y + (starSize / 2)));
+        Point t_p, halfPoint;
+        g.setStroke(new BasicStroke(2));
+
+        for(StarSystem t : s.closeIntermediarySystems) {
+            t_p = convertCoordinateToCanvas(t.positionX, t.positionY);
+//            tAdjusted = new Point((t_p.x + (starSize / 2)), (t_p.y + (starSize / 2)));
+            halfPoint = new Point((int)Math.round((s_p.x + t_p.x) / 2 + starDiv), (int)Math.round((s_p.y + t_p.y) / 2 + starDiv));
+            if(drawOnWhite) { g.setColor(intermediaryConnectionOnWhiteColor); }
+            else { g.setColor(intermediaryConnectionColor); }
+            g.drawLine((s_p.x + (starSize/2)), (s_p.y + (starSize/2)), halfPoint.x, halfPoint.y);
+            if(!t.closeIntermediarySystems.contains(s)) {
+                if(drawOnWhite) { g.setColor(noIntermediaryConnectionOnWhiteColor); }
+                else { g.setColor(noIntermediaryConnectionColor); }
+                g.drawLine(halfPoint.x, halfPoint.y, (t_p.x + (starSize/2)), (t_p.y + (starSize/2)));
+            }
+        }
+    }
+
+    public void drawStar(Graphics2D g, StarSystem s, boolean drawOnWhite, boolean drawFactionColors, boolean biggerFont, boolean drawSkulls, boolean drawBlackMarket, boolean drawStarleague) {
         Point p = convertCoordinateToCanvas(s.positionX, s.positionY);
 
-        if (drawWhite) {
-            if(drawFactionColors) { g.setColor(s.owner.getDarkColor()); }
-            else { g.setColor(Color.BLACK); }
-            g.fillOval(p.x, p.y, starSize, starSize);
-
-            FontMetrics metrics = g.getFontMetrics(titleFont);
-            int stringWidth = metrics.stringWidth(s.name);
-            int titleX = p.x - (int) Math.ceil((double) stringWidth / 2) + 5;
+        FontMetrics metrics;
+        if(biggerFont) {
+            metrics = g.getFontMetrics(titleFontBig);
+            g.setFont(titleFontBig);
+        }
+        else {
+            metrics = g.getFontMetrics(titleFont);
             g.setFont(titleFont);
-            g.drawString(s.name, titleX, p.y - 5);
+        }
+        int stringWidth = metrics.stringWidth(s.name);
+        int titleX = p.x - (int) Math.ceil((double) stringWidth / 2) + 5;
 
-            if ((p.x + stringWidth) > maxDrawnX) { maxDrawnX = p.x + stringWidth; }
-            if ((p.y + starSize) > maxDrawnY) { maxDrawnY = p.y + starSize; }
+        if ((p.x + stringWidth) > maxDrawnX) { maxDrawnX = p.x + stringWidth; }
+        if ((p.y + starSize) > maxDrawnY) { maxDrawnY = p.y + starSize; }
 
+        // TODO change if/else so that only color variable is set instead of two clauses!!!
+        if (drawOnWhite) {
             if (drawSkulls && (skullDarkImage != null)) {
                 skullDarkImage.paintIcon(this, g, (p.x + (starSize) + 2), (p.y - 2));
                 g.setColor(new Color(169,69,18));
-                g.drawString(s.difficulty.getDisplayName(), (p.x + starSize + 24), (p.y + 13));
+                g.drawString(s.difficulty.getDisplayName(), (p.x + starSize + 24), (p.y + 15));
             }
-
             int xOffset = 8;
             if (s.tags.contains(MSSettings.TagItem.BLACKMARKET) && drawBlackMarket && (blackmarketDarkImage != null)) {
                 blackmarketDarkImage.paintIcon(this, g,  (p.x - (starSize) - xOffset), (p.y - 2));
@@ -1105,27 +1184,19 @@ public class StarMap extends JLayeredPane {
             if (s.tags.contains(MSSettings.TagItem.STARLEAGUE) && drawStarleague && (starleagueDarkImage != null)) {
                 starleagueDarkImage.paintIcon(this, g, (p.x - (starSize) - xOffset - 4), (p.y - 2));
             }
+            g.setColor(Color.WHITE);
+            g.drawString(s.name, (titleX - 2), p.y - 7);
+            g.drawString(s.name, (titleX + 2), p.y - 7);
+            if(drawFactionColors) { g.setColor(s.owner.getDarkColor()); }
+            else { g.setColor(Color.BLACK); }
+            g.drawString(s.name, titleX, p.y - 5);
         }
         else {
-            if(drawFactionColors) { g.setColor(s.owner.getColor()); }
-            else { g.setColor(Color.WHITE); }
-            g.fillOval(p.x, p.y, starSize, starSize);
-
-            FontMetrics metrics = g.getFontMetrics(titleFont);
-            int stringWidth = metrics.stringWidth(s.name);
-            int titleX = p.x - (int) Math.ceil((double) stringWidth / 2) + 5;
-            g.setFont(titleFont);
-            g.drawString(s.name, titleX, p.y - 5);
-
-            if ((p.x + stringWidth) > maxDrawnX) { maxDrawnX = p.x + stringWidth; }
-            if ((p.y + starSize) > maxDrawnY) { maxDrawnY = p.y + starSize; }
-
             if (drawSkulls && (skullImage != null)) {
                 skullImage.paintIcon(this, g, (p.x + (starSize) + 2), (p.y - 2));
                 g.setColor(new Color(151, 65, 17));
-                g.drawString(s.difficulty.getDisplayName(), (p.x + starSize + 24), (p.y + 13));
+                g.drawString(s.difficulty.getDisplayName(), (p.x + starSize + 24), (p.y + 15));
             }
-
             int xOffset = 8;
             if (s.tags.contains(MSSettings.TagItem.BLACKMARKET) && drawBlackMarket && (blackmarketImage != null)) {
                 blackmarketImage.paintIcon(this, g, (p.x - (starSize) - xOffset), (p.y - 2));
@@ -1134,7 +1205,15 @@ public class StarMap extends JLayeredPane {
             if (s.tags.contains(MSSettings.TagItem.STARLEAGUE) && drawStarleague && (starleagueImage != null)) {
                 starleagueImage.paintIcon(this, g,(p.x - (starSize) - xOffset - 4), (p.y - 2));
             }
+            g.setColor(Color.BLACK);
+            g.drawString(s.name, (titleX - 2), p.y - 7);
+            g.drawString(s.name, (titleX + 2), p.y - 7);
+            if(drawFactionColors) { g.setColor(s.owner.getColor()); }
+            else { g.setColor(Color.WHITE); }
+            g.drawString(s.name, titleX, p.y - 5);
         }
+        g.fillOval(p.x, p.y, starSize, starSize);
+
     }
 
 
@@ -1144,6 +1223,8 @@ public class StarMap extends JLayeredPane {
         JCheckBox starleagueCheck;
         JCheckBox factionColorCheck;
         JCheckBox backgroundWhiteCheck;
+        JCheckBox biggerFontCheck;
+        JCheckBox drawIntermediariesCheck;
         JTextField fileText;
         JButton chooseFileButton;
         File outputFile;
@@ -1174,15 +1255,23 @@ public class StarMap extends JLayeredPane {
 
             gridRow++;
             factionColorCheck = new JCheckBox("Draw Faction Colors");
-            factionColorCheck.setSelected(true);
+            factionColorCheck.setSelected(MSSettings.saveMapFactionColorCheck);
             factionColorCheck.addActionListener(this);
             backgroundWhiteCheck = new JCheckBox("Draw White Background");
-            backgroundWhiteCheck.setSelected(MSSettings.mapWhiteBackground);
+            backgroundWhiteCheck.setSelected(MSSettings.saveMapWhiteBackground);
             backgroundWhiteCheck.addActionListener(this);
+            biggerFontCheck = new JCheckBox("Use Big Font");
+            biggerFontCheck.setSelected(MSSettings.saveMapBiggerFont);
+            biggerFontCheck.addActionListener(this);
+            drawIntermediariesCheck = new JCheckBox("Draw Travel Lines");
+            drawIntermediariesCheck.setSelected(MSSettings.saveMapShowIntermediaries);
+            drawIntermediariesCheck.addActionListener(this);
             Box colorBox = Box.createHorizontalBox();
             colorBox.add(factionColorCheck);
             colorBox.add(backgroundWhiteCheck);
-            colorBox.setBorder(BorderFactory.createTitledBorder("<html><div>Map Color Options:</div></html>"));
+            colorBox.add(biggerFontCheck);
+            colorBox.add(drawIntermediariesCheck);
+            colorBox.setBorder(BorderFactory.createTitledBorder("<html><div>Map Options:</div></html>"));
             MSSettings.addGridBagItem(mainPanel, colorBox, 0, gridRow, 3, 1, GridBagConstraints.FIRST_LINE_START);
 
             gridRow++;
@@ -1237,8 +1326,10 @@ public class StarMap extends JLayeredPane {
         @Override
         public void actionPerformed(ActionEvent e) {
             Object source = e.getSource();
-            if (source == factionColorCheck) { MSSettings.factionColorCheck = factionColorCheck.isSelected(); }
-            else if (source == backgroundWhiteCheck) { MSSettings.mapWhiteBackground = backgroundWhiteCheck.isSelected(); }
+            if (source == drawIntermediariesCheck) { MSSettings.saveMapShowIntermediaries = drawIntermediariesCheck.isSelected(); }
+            else if (source == factionColorCheck) { MSSettings.saveMapFactionColorCheck = factionColorCheck.isSelected(); }
+            else if (source == backgroundWhiteCheck) { MSSettings.saveMapWhiteBackground = backgroundWhiteCheck.isSelected(); }
+            else if (source == biggerFontCheck) { MSSettings.saveMapBiggerFont = biggerFontCheck.isSelected(); }
             else if (source == chooseFileButton) {
                 JFileChooser fc = new JFileChooser() {
                     @Override
@@ -1287,12 +1378,10 @@ public class StarMap extends JLayeredPane {
                 }
                 else { fc.setCurrentDirectory(MSSettings.lastMapFile); }
 
-//        // Enable "Details" view in file chooser:
                 Action details = fc.getActionMap().get("viewTypeDetails");
                 details.actionPerformed(null);
 
                 int returnVal = fc.showSaveDialog(this);
-//            int returnVal = fc.showSaveDialog(fc);
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
                     outputFile = fc.getSelectedFile();
                     fileText.setText(fc.getSelectedFile().toString());
@@ -1314,7 +1403,13 @@ public class StarMap extends JLayeredPane {
                 }
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-                for (StarSystem s : stats.starSystemSelection) { drawStar(g, s, backgroundWhiteCheck.isSelected(), factionColorCheck.isSelected(), skullCheck.isSelected(), blackMarketCheck.isSelected(), starleagueCheck.isSelected()); }
+                if(MSSettings.saveMapShowIntermediaries) {
+                    if(!MSSettings.intermediaryRoutesSet) { stats.setIntermediarySystems(); }
+                    for (StarSystem s : stats.starSystemSelection) {
+                        drawTravelLines(g, s, MSSettings.saveMapWhiteBackground);
+                    }
+                }
+                for (StarSystem s : stats.starSystemSelection) { drawStar(g, s, MSSettings.saveMapWhiteBackground, MSSettings.saveMapFactionColorCheck, MSSettings.saveMapBiggerFont, skullCheck.isSelected(), blackMarketCheck.isSelected(), starleagueCheck.isSelected()); }
                 try {
                     ImageIO.write(paintImage, "PNG", outputFile);
                 }

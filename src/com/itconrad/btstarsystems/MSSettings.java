@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 
 public class MSSettings {
 public static boolean useLog = false;
@@ -35,15 +36,21 @@ public static boolean showSkulls = false;
 public static boolean showBlackMarkets = false;
 public static boolean showStarleague = false;
 public static boolean showShopItems = false;
-public static boolean showPlanetDescription = false;
+public static boolean showSystemDescription = false;
+public static boolean showIntermediaryRoutes = false;
+public static boolean intermediaryRoutesSet = false;
+public static ArrayList<String> iniSystemLines;
 public static StatFrame myFrame;
 public static int frameWidth=-1;
 public static int frameHeight=-1;
 public static int frameX=0;
 public static int frameY=0;
-public static boolean factionColorCheck = true;
-public static boolean mapWhiteBackground = true;
+public static boolean saveMapFactionColorCheck = true;
+public static boolean saveMapWhiteBackground = true;
+public static boolean saveMapBiggerFont = true;
+public static boolean saveMapShowIntermediaries = true;
 public static File lastMapFile = null;
+public static final double squaredJumpRange = 900.0;
 
 public enum TagItem {
     BATTLEFIELD("Battlefield"),
@@ -67,16 +74,16 @@ public enum TagItem {
 
 public enum OwnerFactions {
     //    AURIGAN_PIRATES("Aurigan Pirates", "pirate_logo.png"),
-    NOFACTION("Abandoned", "NoFaction.png", new Color(103,116,117), new Color(83,96,97)),
+    NOFACTION("Abandoned", "NoFaction.png", new Color(255,255,255), new Color(0,0,0)),
 //    AURIGAN_DIRECTORATE("Aurigan Directorate", "Directorate.png", new Color(29,142,14), new Color(0,122,0)),
         AURIGAN_RESTAURATION("Aurigan Restauration", "Restoration.png", new Color(29,142,14), new Color(0,122,0)),
     //    COMSTAR("ComStar", "planetlogo.png"),
     //    KURITA("Kurita", "planetlogo.png"),
     DAVION("Davion", "Suns.png", new Color(215,166, 40), new Color(145,96, 0)),
     LIAO("Liao", "Liao.png", new Color(170,185,88), new Color(100,115,18)),
-    MAGISTRACY_OF_CANOPUS("Magistracy of Canopus", "Magistracy.png", new Color(75,105,122), new Color(55,85,102)),
+    MAGISTRACY_OF_CANOPUS("Magistracy of Canopus", "Magistracy.png", new Color(75,105,222), new Color(45,45,222)),
     MARIK("Marik", "Marik.png", new Color(161, 98, 174), new Color(121, 58, 134)),
-    LOCALS("Planetary Government", "Locals.png", new Color(205,206,183), new Color(15,16,25)),
+    LOCALS("Planetary Government", "Locals.png", new Color(130,130,130), new Color(130,130,130)),
     //    STEINER("Steiner", "planetlogo.png"),
     TAURIAN_CONCORDAT("Taurian Concordat", "Taurian.png", new Color(151,39,38), new Color(121,9,8));
 
@@ -137,6 +144,7 @@ public enum StarAttributes {
     TARGETS("Targets"),
     TAG("Properties"),
     DIFFICULTIES("Difficulties"),
+    JUMPDISTANCES("Jump Distances"),
     MAXSHOPSPECIALS("Shop Specials");
 
     private String displayName;
@@ -177,10 +185,42 @@ public enum Difficulties {
     public ImageIcon getIcon() { return this.icon; }
 }
 
+public static int minJump, maxJump;
+public static String[] jumpDistances;
+
 public static String[] maxShopSpecialStrings = new String[]
         { "2", "3", "4", "5", "6", "7", "8", "9", "10" };
 
 public static double mapStretchFactor = 12.0;
+
+public static ArrayList<StarSystem> starSystems;
+
+public static double[][] squaredDistanceMatrix;
+
+public static double getSquaredDistance(StarSystem systemA, StarSystem systemB) {
+    return MSSettings.squaredDistanceMatrix[starSystems.indexOf(systemA)][starSystems.indexOf(systemB)];
+}
+
+
+public static StarSystem getStarSystem(String name) {
+    for(StarSystem s : starSystems) {
+        if (s.name.equals(name)) { return s; }
+    }
+    return null;
+}
+
+public static ArrayList<StarSystem> getNearbySystems(StarSystem origin) {
+    ArrayList<StarSystem> nearbySystems = new ArrayList<>();
+    int i = starSystems.indexOf(origin);
+    for(int j = 0; j < starSystems.size(); j++) {
+        if((i != j) && (squaredDistanceMatrix[i][j] < MSSettings.squaredJumpRange)) {
+            nearbySystems.add(starSystems.get(j));
+        }
+    }
+    return nearbySystems;
+}
+
+
 
 public enum MessageLevel {TRACE, DEBUG, INFO, WARNING, ERROR, FATAL}
 
@@ -206,18 +246,14 @@ public static void addGridBagItem(JPanel p, JComponent c, int x, int y, int widt
     p.add(c, gc);
 }
 
+public static double calculateSquaredDistance(StarSystem systemA, StarSystem systemB) {
+    return ((systemA.positionX - systemB.positionX) * (systemA.positionX - systemB.positionX)) + ((systemA.positionY - systemB.positionY) * (systemA.positionY - systemB.positionY));
+}
+
 public static class Logger {
     private static StringBuilder output = new StringBuilder();
     private static int inputCounter = 0;
     private static final Path path = Paths.get(logFile.getPath());
-//        boolean linesToWrite;
-
-//        public Logger() {
-////            output = new StringBuilder("<html><body style=\"background:black\"><table>\n");
-//            output = new StringBuilder();
-//            inputCounter = 0;
-////            linesToWrite = false;
-//        }
 
     public static boolean logDelete() {
         try {
@@ -314,4 +350,6 @@ public static class Logger {
 //            }
     }
 }
+
+
 }

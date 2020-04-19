@@ -23,6 +23,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Collections;
 
 public class INIops {
@@ -31,6 +32,7 @@ public class INIops {
  */
 public static void readINI() {
     File iniFile = new File("btstats.ini");
+    MSSettings.iniSystemLines = new ArrayList<>();
     if (iniFile.exists()) {
 //        ArrayList<String> lines = new ArrayList<>();
         String line;
@@ -106,8 +108,14 @@ public static void readINI() {
                     }
                     else if (line.startsWith("showPlanetDescription=")) {
                         if(MSSettings.useLog) { MSSettings.Logger.logEntry("found showPlanetDescription line: " + line.substring(22), MSSettings.MessageLevel.DEBUG, "MSSettings.readINI"); }
-                        if(line.substring(22).equalsIgnoreCase("true")) {  MSSettings.showPlanetDescription = true;
+                        if(line.substring(22).equalsIgnoreCase("true")) {  MSSettings.showSystemDescription = true;
                             if(MSSettings.useLog) { MSSettings.Logger.logEntry("setting showPlanetDescription to true", MSSettings.MessageLevel.INFO, "MSSettings.readINI"); }
+                        }
+                    }
+                    else if (line.startsWith("showIntermediaryRoutes=")) {
+                        if(MSSettings.useLog) { MSSettings.Logger.logEntry("found showIntermediaryRoutes line: " + line.substring(23), MSSettings.MessageLevel.DEBUG, "MSSettings.readINI"); }
+                        if(line.substring(23).equalsIgnoreCase("true")) {  MSSettings.showIntermediaryRoutes = true;
+                            if(MSSettings.useLog) { MSSettings.Logger.logEntry("setting showIntermediaryRoutes to true", MSSettings.MessageLevel.INFO, "MSSettings.readINI"); }
                         }
                     }
                     else if (line.startsWith("mapZoomFactor=")) {
@@ -166,6 +174,9 @@ public static void readINI() {
 
                         if(MSSettings.useLog) { MSSettings.Logger.logEntry("setting frameY to " + MSSettings.frameY, MSSettings.MessageLevel.INFO, "MSSettings.readINI"); }
                     }
+                    else if (line.startsWith("starsystem=")) {
+                        MSSettings.iniSystemLines.add(line.substring(11));
+                    }
                 }
             }
         }
@@ -205,7 +216,9 @@ public static void writeIni() {
         sb.append(s + "\nshowPlanetShopItems=");
         s = MSSettings.showShopItems ? "true" : "false";
         sb.append(s + "\nshowPlanetDescription=");
-        s = MSSettings.showPlanetDescription ? "true" : "false";
+        s = MSSettings.showSystemDescription ? "true" : "false";
+        sb.append(s + "\nshowIntermediaryRoutes=");
+        s = MSSettings.showIntermediaryRoutes ? "true" : "false";
         sb.append(s + "\nframeWidth=" + MSSettings.myFrame.getBounds().width + "\nframeHeight=" + MSSettings.myFrame.getBounds().height);
         sb.append("\nframeX=" + MSSettings.myFrame.getBounds().x + "\nframeY=" + MSSettings.myFrame.getBounds().y);
         sb.append("\n; Use directDirectorySelection=true to directly select the folder where the star system JSON files are located.\n" +
@@ -213,6 +226,17 @@ public static void writeIni() {
         s = MSSettings.directDirectorySelection ? "true" : "false";
         sb.append(s + "\n; lastDir is the last used BATTLETECH main directory (e.g. C:\\Program Files\\BATTLETECH)\nlastDir=");
         if(MSSettings.lastBTdir != null) { sb.append(MSSettings.lastBTdir.getAbsolutePath()); }
+        if((MSSettings.starSystems.get(0) != null) && (MSSettings.starSystems.get(0).closeIntermediarySystems.size() > 0)) {
+            sb.append("\n\n[Last Loaded StarSystems]\n");
+            for(StarSystem ss : MSSettings.starSystems) {
+                sb.append("starsystem=" + ss.name + "," + ss.positionX + "," + ss.positionY);
+                for(StarSystem n : ss.closeIntermediarySystems) {
+                    sb.append("," + n.name);
+                }
+                sb.append("\n");
+            }
+        }
+
         Files.write(iniFile.toPath(), Collections.singleton(sb.toString()), StandardCharsets.UTF_8);
     }
     catch (Exception e) { System.out.println(e.toString()); }

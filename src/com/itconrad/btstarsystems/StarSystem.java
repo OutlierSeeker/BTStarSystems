@@ -24,13 +24,14 @@ String details;
 double positionX;
 double positionY;
 double positionZ;
-long jumpDistance;
+int jumpDistance;
 MSSettings.OwnerFactions owner;
 int maxShopSpecials;
 MSSettings.Difficulties difficulty;
 ArrayList<MSSettings.Factions> employers;
 ArrayList<MSSettings.Factions> targets;
 ArrayList<MSSettings.TagItem> tags;
+ArrayList<StarSystem> closeIntermediarySystems;
 
 public StarSystem(String name, String details, double positionX, double positionY, double positionZ, long jumpDistance, MSSettings.OwnerFactions owner, long maxShopSpecials,
                   long difficulty, ArrayList<MSSettings.TagItem> tags, ArrayList<MSSettings.Factions> employers, ArrayList<MSSettings.Factions> targets) {
@@ -39,7 +40,7 @@ public StarSystem(String name, String details, double positionX, double position
     this.positionX = positionX;
     this.positionY = positionY;
     this.positionZ = positionZ;
-    this.jumpDistance = jumpDistance;
+    this.jumpDistance = (int)jumpDistance;
     this.owner = owner;
     this.maxShopSpecials = (int)maxShopSpecials;
     switch ((int)difficulty) {
@@ -88,10 +89,17 @@ public StarSystem(String name, String details, double positionX, double position
     this.tags = tags;
     this.employers = employers;
     this.targets = targets;
+    closeIntermediarySystems = new ArrayList<>();
 }
 
 public boolean hasOwner(MSSettings.OwnerFactions ownderFaction) { return ownderFaction.equals(owner); }
 public boolean hasEmployer(MSSettings.Factions faction) { return employers.contains(faction); }
 public boolean hasTarget(MSSettings.Factions faction) { return targets.contains(faction); }
 public boolean hasTag(MSSettings.TagItem tag) { return tags.contains(tag); }
+
+@Override
+public String toString() {
+//    return name + " : " + owner.getDisplayName() + " - jumpDistance: " + jumpDistance + ", difficulty: " + difficulty.getDisplayName();
+    return name;
+}
 }
